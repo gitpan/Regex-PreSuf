@@ -1,3 +1,15 @@
+Mon May 15 00:53:00 2000  Jarkko Hietaniemi  <jhi@alpha.hut.fi>
+
+	* The test suite would got stuck if there were no words
+	  beginning with a certain letter.  Reported by Paul Schinder.
+
+	* Now testing also words ending with a certain letter.
+
+	* Give an estimate on the remaining testing time on the big
+	  vocabulary test as it may take a while.
+
+	* Release as 1.11.
+	
 Fri May 12 23:16:07 2000  Jarkko Hietaniemi  <jhi@alpha.hut.fi>
 
 	* Handle metacharacters: now you can use the regular

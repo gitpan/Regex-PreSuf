@@ -85,13 +85,24 @@ use Benchmark;
 
 if (@words) {
     print STDERR "# NOTE THAT THIS TEST WILL TAKE SEVERAL MINUTES.\n";
-    print STDERR "# WE WILL TEST ALL THE LETTERS FROM 'a' TO 'z'.\n";
-    my $ok;
+    print STDERR "# And I do mean *SEVERAL* minutes.\n";
+    print STDERR "# We will test all the letters from 'a' TO 'z',\n";
+    print STDERR "# both as the first and the last letters.\n";
+    my $ok = 0;
     my @az = ("a".."z");
-    foreach my $c (@az) {
-	my @a  = grep { /^$c/  } @words;
+
+    # Throw away some of the words.
+    @words = grep { /^[a-z]+$/ } @words;
+
+    my $N0 = 2 * @words;
+    my $N1;	
+    my $c;
+    my @a;
+    my @c;
+    my $T0 = time();
+
+    sub doit {
 	my ($t0, $t1);
-	print STDERR "# Testing ", scalar @a," words beginning with '$c'...\n";
 	$t0 = new Benchmark;
 	my $b  = join("|", @a);
 	$t1 = new Benchmark;
@@ -109,9 +120,12 @@ if (@words) {
 	print STDERR "# PreSuf/create:  ", timestr($tc), "\n";
 	print STDERR "# PreSuf/execute: ";
 	$t0 = new Benchmark;
-	my @c = grep { /^(?:$c)$/ } @words;
+	@c = grep { /^(?:$c)$/ } @words;
 	$t1 = new Benchmark;
 	print STDERR timestr(timediff($t1, $t0)), "\n";
+    }
+
+    sub checkit {
 	if (@c == @a && join("\0", @a) eq join("\0", @c)) {
 	    $ok++;
 	} else {
@@ -127,15 +141,48 @@ if (@words) {
 		}
 	    }
 	    if (keys %c_a) {
-		print STDERR "# INVENTED:\n";
+		print STDERR "# MISTOOK:\n";
 		foreach (sort keys %c_a) {
 		    print STDERR "# $_\n";
 		}
 	    }
 	}
     }
-    print "not " unless $ok == @az;
+
+    sub estimateit {
+	$N1 += @a;
+	my $dt = time() - $T0;
+	if ($N1 && $dt) {
+	    print STDERR "# Estimated remaining testing time: ",
+	                 int(($N0 - $N1)/($N1/$dt)), ".\n";
+	}
+    }
+
+    foreach $c (@az) {
+	@a  = grep { /^$c/  } @words;
+	if (@a) {
+	    print STDERR "# Testing ", scalar @a," words beginning with '$c'...\n";
+	    doit();
+	    checkit();
+	} else {
+	    print STDERR "# No words beginning with '$c'...\n";
+	}
+	estimateit();
+
+	@a  = grep { /$c$/  } @words;
+	if (@a) {
+	    print STDERR "# Testing ", scalar @a," words ending with '$c'...\n";
+	    doit();
+	    checkit();
+	} else{
+	    print STDERR "# No words ending with '$c'...\n";
+	}
+	estimateit();
+    }
+
+    print "not " unless $ok == 2 * @az;
     print "ok ", $test++, "\n";
 } else {
+    print "ok ", $test++, "# skipped: no words found\n";
     print "ok ", $test++, "# skipped: no words found\n";
 }

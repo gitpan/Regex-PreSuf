@@ -4,7 +4,7 @@ use strict;
 local $^W = 1;
 use vars qw($VERSION $DEBUG);
 
-$VERSION = "1.10";
+$VERSION = "1.11";
 
 $DEBUG = 0;  
 
