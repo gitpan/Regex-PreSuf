@@ -4,7 +4,7 @@ use strict;
 local $^W = 1;
 use vars qw($VERSION);
 
-$VERSION = 0.003;
+$VERSION = 0.004;
 
 =pod
 
@@ -122,11 +122,23 @@ sub suffix_length {
 
 sub _presuf {
     my $param = shift;
+    
+    return $_[0] if @_ == 1;
+
     my ($pre_n, %pre_d) = prefix_length @_;
     my ($suf_n, %suf_d) = suffix_length @_;
 
     if ($pre_n or $suf_n) {
-	return $_[0] if $pre_n == $suf_n; # Really?  All equal?
+	if ($pre_n == $suf_n) {
+	    my $eq_n = 1;
+
+	    foreach (@_[1..$#_]) {
+		last if $_[0] ne $_;
+		$eq_n++;
+	    }
+
+	    return $_[0] if $eq_n == @_; # All equal.  How boring.
+	}
 
 	# Remove prefixes and suffixes and recurse.
 
@@ -211,7 +223,8 @@ sub _presuf {
 
 	if (@len_1) { # Character classes.
 	    if (exists $param->{ anychar } and
-		(exists $pre_d{ '.' } or exists $suf_d{ '.' })) {
+		(exists $pre_d{ '.' } or exists $suf_d{ '.' }) and
+	        grep { $_ eq '.' } @len_1) {
 		push @alt_1, '.';
 	    } else {
 		if (@len_1 == 1) {
