@@ -67,7 +67,7 @@ print STDERR "# Hang on, collecting words for the next test...\n";
 
 my %words;
 
-foreach my $dict (qw(/usr/dict/words /usr/share/dict/words)) {
+foreach my $dict (qw(../ppclinuxwords /usr/dict/words /usr/share/dict/words)) {
     if (open(WORDS, $dict)) {
 	while (<WORDS>) {
 	    chomp;
@@ -189,6 +189,7 @@ if (@words) {
 	    checkit();
 	} else {
 	    print STDERR "# No words beginning with '$c'...\n";
+	    $ok++; # not a typo
 	}
 	estimateit();
 
@@ -199,6 +200,7 @@ if (@words) {
 	    checkit();
 	} else{
 	    print STDERR "# No words ending with '$c'...\n";
+	    $ok++; # not a typo
 	}
 	estimateit();
     }

@@ -4,7 +4,7 @@ use strict;
 local $^W = 1;
 use vars qw($VERSION $DEBUG);
 
-$VERSION = "1.13";
+$VERSION = "1.14";
 
 $DEBUG = 0;  
 
@@ -26,9 +26,8 @@ Regex::PreSuf - create regular expressions from word lists
 
 The B<presuf()> subroutine builds regular expressions out of 'word
 lists', lists of strings.  The regular expression matches the same
-words as the word list.  These regular expressions normally run few
-dozen percentages faster than a simple-minded '|'-concatenation of the
-words.
+words as the word list.  These regular expressions normally run faster
+than a simple-minded '|'-concatenation of the words.
 
 Examples:
 
