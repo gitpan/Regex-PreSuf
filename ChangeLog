@@ -1,4 +1,10 @@
-Mon May 15 00:53:00 2000  Jarkko Hietaniemi  <jhi@alpha.hut.fi>
+Mon May 15 00:53:00 2000  Jarkko Hietaniemi  <jhi@iki.fi>
+
+	* Ahem.  In 1.11 I fixed the test suite against empty
+	  test inputs but forgot to fix presuf() itself against
+	  empty inputs.
+	
+	* Release as 1.12.
 
 	* The test suite would got stuck if there were no words
 	  beginning with a certain letter.  Reported by Paul Schinder.
@@ -10,7 +16,7 @@ Mon May 15 00:53:00 2000  Jarkko Hietaniemi  <jhi@alpha.hut.fi>
 
 	* Release as 1.11.
 	
-Fri May 12 23:16:07 2000  Jarkko Hietaniemi  <jhi@alpha.hut.fi>
+Fri May 12 23:16:07 2000  Jarkko Hietaniemi  <jhi@iki.fi>
 
 	* Handle metacharacters: now you can use the regular
 	  expression metacharacters in your words withour fear
@@ -51,7 +57,7 @@ Fri May 12 23:16:07 2000  Jarkko Hietaniemi  <jhi@alpha.hut.fi>
 	* Release as 1.10.  The jump in the version number is
 	  warranted by the fixed handling of metacharacters.
 	
-Thu May 11 23:15:16 2000  Jarkko Hietaniemi  <jhi@alpha.hut.fi>
+Thu May 11 23:15:16 2000  Jarkko Hietaniemi  <jhi@iki.fi>
 
 	* PreSuf.pm: make the debug prints only to show up
 	  when debugging requested (aaargh, I've developed

@@ -4,7 +4,7 @@ use strict;
 local $^W = 1;
 use vars qw($VERSION $DEBUG);
 
-$VERSION = "1.11";
+$VERSION = "1.12";
 
 $DEBUG = 0;  
 
@@ -165,6 +165,8 @@ sub _presuf {
     
     print "_presuf:$INDENT <- ", join(" ", map { join('', @$_) } @_), "\n"
 	if $DEBUG;
+
+    return '' if @_ == 0;
 
     if (@_ == 1) {
 	my $presuf = join('', @{ $_[0] });
@@ -365,6 +367,8 @@ sub _presuf {
 
 sub presuf {
     my $param = ref $_[0] eq 'HASH' ? shift : { };
+
+    return '' if @_ == 0;
 
     my @args = map { quotemeta() } @_;
 
