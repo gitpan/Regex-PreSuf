@@ -4,7 +4,7 @@ use strict;
 local $^W = 1;
 use vars qw($VERSION);
 
-$VERSION = 0.002;
+$VERSION = 0.003;
 
 =pod
 
@@ -22,22 +22,20 @@ Regex::PreSuf - create regular expressions from word lists
 
 =head1 DESCRIPTION
 
-This module creates regular expressions out of 'word lists', lists
-of strings, matching the same words.  The easiest thing to do would
-be of course just to concatenate the words with '|' but this module
-tries to be cleverer.  It finds out the common prefixes and suffixes
-of the words and then recursively looks at the remaining differences.
-It knows about character classes.  These optimized regular expressions
+This module creates regular expressions out of 'word lists', lists of
+strings, matching the same words.  These optimized regular expressions
 normally run few dozen percentages faster than the simple-minded
-'|'-concatenation.
+'|'-concatenation.  The easiest thing to do would be of course just to
+concatenate the words with '|' but this module tries to be cleverer.
 
 The downsides:
 
 =over 4
 
-=item the original order of the words is not necessarily
-respected, for example because the character class matches are be
-collected together, separate from the '|' alternations.
+=item the original order of the words is not necessarily respected,
+for example because the character class matches are collected
+together, separate from the '|' alternations. You can think of, say,
+'[ab]' as 'a|b', to see why this matters.
 
 =item because the module blithely ignores any specialness of any
 regular expression metacharacters such as the C<*?+{}[]>, please
@@ -54,14 +52,19 @@ metacharacter.  If you call C<presuf()> like this:
 
 	# $re should be now 'foo.ar'
 
-Beware, though, there are limits to the grasp:
+The module finds out the common prefixes and suffixes of the words and
+then recursively looks at the remaining differences.  However, by
+default it only uses prefixes because for many languages (natural or
+artificial) this seems to produce the fastest matchers.  To allow
+also for suffixes use
 
-	my $re = presuf({ anychar=>1 }, qw(foobar foo.ar fooxa.));
+	my $re = presuf({ suffixes=>1 }, ...);
 
-	# $re _could_ be now 'foo.a.'
-        # but it is 'foo(?:xa.|.ar)'
+To use B<only> suffixes use
 
-Finesses like this may or may not be implemented in future releases.
+	my $re = presuf({ prefixes=>0 }, ...);
+
+(this implicitly enables suffixes)
 
 =head1 COPYRIGHT
 
@@ -118,7 +121,6 @@ sub suffix_length {
 }
 
 sub _presuf {
-    my $level = shift;
     my $param = shift;
     my ($pre_n, %pre_d) = prefix_length @_;
     my ($suf_n, %suf_d) = suffix_length @_;
@@ -133,13 +135,13 @@ sub _presuf {
 
 	my @presuf;
 
-	my $rem_n = $pre_n + $suf_n;
+	my $ps_n = $pre_n + $suf_n;
 
 	foreach (@_) {
-	    push @presuf, substr $_, $pre_n, length($_) - $rem_n;
+	    push @presuf, substr $_, $pre_n, length($_) - $ps_n;
 	}
 
-	return $pre_s . _presuf($level + 1, $param, @presuf) . $suf_s;
+	return $pre_s . _presuf($param, @presuf) . $suf_s;
     } else {
 	my @len_n;
 	my @len_1;
@@ -150,10 +152,10 @@ sub _presuf {
 	    my $len = length;
 	    if    ($len >  1) { push @len_n, $_ }
 	    elsif ($len == 1) { push @len_1, $_ }
-	    else              { $len_0 = 1      } # $len == 0
+	    else              { $len_0++        } # $len == 0
 	}
 
-	# NOTE: does not preserve the order of |.
+	# NOTE: does not preserve the order of the words.
 
 	if (@len_n) {	# Alternation.
 	    if (@len_n == 1) {
@@ -164,11 +166,33 @@ sub _presuf {
 
 		my (%len_m, @len_m);
 
-		if (@pre_d <= @suf_d) {
+		my $prefixes = not exists $param->{ prefixes } ||
+		                          $param->{ prefixes };
+		my $suffixes =            $param->{ suffixes } ||
+                              (    exists $param->{ prefixes } &&
+                               not        $param->{ prefixes });
+
+		if ($prefixes and $suffixes) {
+		    if (@pre_d < @suf_d) {
+			$suffixes = 0;
+		    } else {
+			if (@pre_d == @suf_d) {
+			    if ( $param->{ suffixes } ) {
+				$prefixes = 0;
+			    } else {
+				$suffixes = 0;
+			    }
+			} else {
+			    $prefixes = 0;
+			}
+		    }
+		}
+
+		if ($prefixes) {
 		    foreach (@len_n) {
 			push @{ $len_m{ substr($_, 0, 1) } }, $_;
 		    }
-		} else {
+		} elsif ($suffixes) {
 		    foreach (@len_n) {
 			push @{ $len_m{ substr($_, -1  ) } }, $_;
 		    }
@@ -177,7 +201,7 @@ sub _presuf {
 		foreach (sort keys %len_m) {
 		    if (@{ $len_m{ $_ } } > 1) {
 			push @alt_n,
-                             _presuf($level + 1, $param, @{ $len_m{ $_ } });
+                             _presuf($param, @{ $len_m{ $_ } });
 		    } else {
 			push @alt_n, $len_m{ $_ }->[0];
 		    }
@@ -185,9 +209,9 @@ sub _presuf {
 	    }
 	}
 
-	if (@len_1) {
+	if (@len_1) { # Character classes.
 	    if (exists $param->{ anychar } and
-		(exists $pre_d{ '.' } or exists $suf_d{ '.'})) {
+		(exists $pre_d{ '.' } or exists $suf_d{ '.' })) {
 		push @alt_1, '.';
 	    } else {
 		if (@len_1 == 1) {
@@ -211,7 +235,7 @@ sub _presuf {
 sub presuf {
     my $param = ref $_[0] eq 'HASH' ? shift : { };
 
-    _presuf(0, $param, @_);
+    _presuf($param, @_);
 }
 
 1;
