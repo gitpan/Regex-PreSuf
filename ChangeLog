@@ -1,3 +1,12 @@
+2004-05-12  Jarkko Hietaniemi  <jhi@iki.fi>
+
+	* Newlines in patterns didn't work.  Fix from Bart Lateur.
+
+	* Limit the number of words used for the big test,
+	  split the big test to its own test file.
+	
+	* Release as 1.16.
+
 Tue May 16 05:25:01 2000  Jarkko Hietaniemi  <jhi@iki.fi>
 
 	* Sigh.  The t/presuf.t would also fail if no words 

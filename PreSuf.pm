@@ -4,7 +4,7 @@ use strict;
 local $^W = 1;
 use vars qw($VERSION $DEBUG);
 
-$VERSION = "1.15";
+$VERSION = "1.16";
 
 $DEBUG = 0;  
 
@@ -374,8 +374,10 @@ sub presuf {
     # Undo quotemeta for anychars.
     @args = map { s/\\\././g; $_ } @args if $param->{ anychar };
 
+    s/\\(\s)/$1/g for @args;
+
     foreach (@args) {
-	$_ = [ /(\\?.)/g ];
+	$_ = [ /(\\?.)/gs ];
     }
 
     return _presuf(0, $param, @args);
