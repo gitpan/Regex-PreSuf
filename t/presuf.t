@@ -79,14 +79,12 @@ foreach my $dict (qw(/usr/dict/words /usr/share/dict/words)) {
 
 my @words = keys %words;
 
-print STDERR "# Got ", scalar @words, " words.\n";
-
 use Benchmark;
 
 if (@words) {
     print STDERR "# NOTE THAT THIS TEST WILL TAKE SEVERAL MINUTES.\n";
     print STDERR "# And I do mean *SEVERAL* minutes.\n";
-    print STDERR "# We will test all the letters from 'a' TO 'z',\n";
+    print STDERR "# We will test all the letters from 'a' to 'z',\n";
     print STDERR "# both as the first and the last letters.\n";
     my $ok = 0;
     my @az = ("a".."z");
@@ -94,12 +92,25 @@ if (@words) {
     # Throw away some of the words.
     @words = grep { /^[a-z]+$/ } @words;
 
+    print STDERR "# Using ", scalar @words, " words.\n";
+
     my $N0 = 2 * @words;
     my $N1;	
     my $c;
     my @a;
     my @c;
     my $T0 = time();
+ 
+    # I'm trying to get 0 elapsed time to initialize some timesum counters here.
+    # Is there a better way?
+    my $t1=new Benchmark;
+    my $t2=$t1;
+
+    # Initialized to 0, updated by each run of doit.
+    my $naiveCreationTotal=timediff($t1,$t2);
+    my $naiveExecutionTotal=timediff($t1,$t2);
+    my $presufCreationTotal=timediff($t1,$t2);
+    my $presufExecutionTotal=timediff($t1,$t2);
 
     sub doit {
 	my ($t0, $t1);
@@ -107,22 +118,34 @@ if (@words) {
 	my $b  = join("|", @a);
 	$t1 = new Benchmark;
 	my $tb = timediff($t1, $t0);
+        $naiveCreationTotal=Benchmark::timesum($tb,$naiveCreationTotal);
 	print STDERR "# Naïve/create:   ", timestr($tb), "\n";
 	print STDERR "# Naïve/execute:  ";
 	$t0 = new Benchmark;
 	my @b = grep { /^(?:$b)$/ } @words;
 	$t1 = new Benchmark;
-	print STDERR timestr(timediff($t1, $t0)), "\n";
+        $tb=timediff($t1,$t0);
+        $naiveExecutionTotal=Benchmark::timesum($tb,$naiveExecutionTotal);
+        print STDERR timestr($tb), "\n";
 	$t0 = new Benchmark;
 	my $c  = presuf(@a);
 	$t1 = new Benchmark;
 	my $tc = timediff($t1, $t0);
+        $presufCreationTotal=Benchmark::timesum($tc,$presufCreationTotal);
 	print STDERR "# PreSuf/create:  ", timestr($tc), "\n";
 	print STDERR "# PreSuf/execute: ";
 	$t0 = new Benchmark;
 	@c = grep { /^(?:$c)$/ } @words;
 	$t1 = new Benchmark;
-	print STDERR timestr(timediff($t1, $t0)), "\n";
+        $tc = timediff($t1, $t0);
+        $presufExecutionTotal=Benchmark::timesum($tc,$presufExecutionTotal);
+        print STDERR timestr($tc), "\n";
+
+	print STDERR "# Aggregate times so far:\n";
+	print STDERR "# Naïve/create:   ",timestr($naiveCreationTotal),"\n";
+	print STDERR "# Naïve/execute:  ",timestr($naiveExecutionTotal),"\n";
+	print STDERR "# Presuf/create:  ",timestr($presufCreationTotal),"\n";
+	print STDERR "# PreSuf/execute: ",timestr($presufExecutionTotal),"\n";
     }
 
     sub checkit {
@@ -154,7 +177,7 @@ if (@words) {
 	my $dt = time() - $T0;
 	if ($N1 && $dt) {
 	    print STDERR "# Estimated remaining testing time: ",
-	                 int(($N0 - $N1)/($N1/$dt)), ".\n";
+	                 int(($N0 - $N1)/($N1/$dt)), " seconds.\n";
 	}
     }
 
@@ -179,6 +202,12 @@ if (@words) {
 	}
 	estimateit();
     }
+
+    print STDERR "# Aggregate times total:\n";
+    print STDERR "# Naïve/create:   ",timestr($naiveCreationTotal),"\n";
+    print STDERR "# Naïve/execute:  ",timestr($naiveExecutionTotal),"\n";
+    print STDERR "# Presuf/create:  ",timestr($presufCreationTotal),"\n";
+    print STDERR "# PreSuf/execute: ",timestr($presufExecutionTotal),"\n";
 
     print "not " unless $ok == 2 * @az;
     print "ok ", $test++, "\n";

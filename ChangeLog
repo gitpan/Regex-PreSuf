@@ -1,3 +1,12 @@
+Mon May 15 22:46:45 2000  Jarkko Hietaniemi  <jhi@iki.fi>
+
+	* Add aggregate timings to the big test, the original patch
+	  supplied by Mike Giroux.
+
+	* Cosmetics changes in presuf.t output.
+	
+	* Release as 1.13.
+
 Mon May 15 00:53:00 2000  Jarkko Hietaniemi  <jhi@iki.fi>
 
 	* Ahem.  In 1.11 I fixed the test suite against empty
