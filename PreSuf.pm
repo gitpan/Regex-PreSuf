@@ -4,7 +4,7 @@ use strict;
 local $^W = 1;
 use vars qw($VERSION $DEBUG);
 
-$VERSION = "1.03";
+$VERSION = "1.10";
 
 $DEBUG = 0;  
 
@@ -60,10 +60,9 @@ together, separate from the '|' alternations.
 
 =item *
 
-Because the module blithely ignores any specialness of any
-regular expression metacharacters such as the C<*?+{}[]>, please
-B<do not use> them in the words, the resulting regular expression
-will most likely be highly illegal.
+The module blithely ignores any specialness of any regular expression
+metacharacters such as the C<.*?+{}[]^$>, they are just plain ordinary
+boring characters.
 
 =back
 
@@ -89,37 +88,6 @@ To use B<only> suffixes use
 
 (this implicitly enables suffixes)
 
-=head2 Prefix and Suffix Length
-
-Two auxiliary subroutines are optionally exportable.  B<WARNING>:
-strictly speaking these routines are mainly only intended for internal
-use of the module and their interface and existence is subject to
-change withour warning.
-
-=over 4
-
-=item *
-
-	($prefix_length, %diff_chars) = prefix_length(@word_list);
-
-B<prefix_length()> gets a word list and returns the length of the
-prefix shared by all the words (such a prefix may not exist, making
-the length to be zero), and a hash that has as keys the characters
-that made the prefix to "stop".  For example for C<qw(foobar fooxar)>
-C<(2, 'b', ..., 'x', ...)> will be returned.
-
-=item *
-
-	($suffix_length, %diff_chars) = suffix_length(@word_list);
-
-B<suffix_length()> gets a word list and returns the length of the
-suffix shared by all the words (such a suffix may not exist, making
-the length to be zero), and a hash that has as keys the characters
-that made the suffix to "stop".  For example for C<qw(foobar barbar)>
-C<(3, 'o', ..., 'r', ...)> will be returned.
-
-=back
-
 =head2 Debugging
 
 In case you want to flood your session without debug messages
@@ -137,11 +105,10 @@ This code is distributed under the same copyright terms as Perl itself.
 
 =cut
 
-use vars qw(@ISA @EXPORT @EXPORT_OK);
+use vars qw(@ISA @EXPORT);
 require Exporter;
 @ISA       = qw(Exporter);
 @EXPORT    = qw(presuf);
-@EXPORT_OK = qw(prefix_length suffix_length);
 
 sub debug {
     if (@_) {
@@ -157,7 +124,7 @@ sub prefix_length {
 
     for(my $m = 0; ; $m++) {
 	foreach (@_) {
-            $diff{ length($_) <= $m ? '' : substr($_, $m, 1) }++;
+            $diff{ @{$_} <= $m ? '' : $_->[$m] }++;
 	}
         last if keys %diff > 1;
 	if (exists $diff{ '' } and $diff{ '' } == @_) {
@@ -177,7 +144,7 @@ sub suffix_length {
 
     for(my $m = 1; ; $m++) {
 	foreach (@_){
-	    $diff{ length($_) < $m ? '' : substr($_, -$m, 1)}++;
+	    $diff{ @{$_} < $m ? '' : $_->[-$m] }++;
 	}
         last if keys %diff > 1;
 	if (exists $diff{ '' } and $diff{ '' } == @_) {
@@ -196,11 +163,13 @@ sub _presuf {
     my $INDENT = " " x $level if $DEBUG;
     my $param = shift;
     
-    print "_presuf:$INDENT <- @_\n" if $DEBUG;
+    print "_presuf:$INDENT <- ", join(" ", map { join('', @$_) } @_), "\n"
+	if $DEBUG;
 
     if (@_ == 1) {
-	print "_presuf:$INDENT -> $_[0]\n" if $DEBUG;
-	return $_[0];
+	my $presuf = join('', @{ $_[0] });
+	print "_presuf:$INDENT -> $presuf\n" if $DEBUG;
+	return $presuf;
     }
 
     my ($pre_n, %pre_d) = prefix_length @_;
@@ -220,7 +189,7 @@ sub _presuf {
     if ($prefixes and not $suffixes) {
 	# On qw(rattle rattlesnake) clear suffix.
 	foreach (keys %pre_d) {
-	    if ($_ eq "") {
+	    if ($_ eq '') {
 		$suf_n = 0;
 		%suf_d = ();
 		last;
@@ -230,7 +199,7 @@ sub _presuf {
 
     if ($suffixes and not $prefixes) {
 	foreach (keys %suf_d) {
-	    if ($_ eq "") {
+	    if ($_ eq '') {
 		$pre_n = 0;
 		%pre_d = ();
 		last;
@@ -241,66 +210,64 @@ sub _presuf {
     if ($pre_n or $suf_n) {
 	if ($pre_n == $suf_n) {
 	    my $eq_n = 1;
+	    my $eq_s = join('', @{ $_[0] });
 
-	    foreach (@_[1..$#_]) {
-		last if $_[0] ne $_;
+	    foreach (@_[ 1 .. $#_ ]) {
+		last if $eq_s ne join('', @{ $_ });
 		$eq_n++;
 	    }
 
-	    print "_presuf:$INDENT -> $_[0]\n" if $DEBUG;
-
-	    return $_[0] if $eq_n == @_; # All equal.  How boring.
+	    if ($eq_n == @_) {  # All equal.  How boring.
+		print "_presuf:$INDENT -> $eq_s\n" if $DEBUG;
+		return $eq_s;
+	    }
 	}
 
 	my $ps_n = $pre_n + $suf_n;
-	my $ovr_n; # Guard against prefix and suffix overlapping.
+	my $overlap; # Guard against prefix and suffix overlapping.
 
 	foreach (@_) {
-	    my $len = length;
-	    
-	    if ($len < $ps_n) {
-		if (defined $ovr_n) {
-		    $ovr_n = $len if $len < $ovr_n;
-		} else {
-		    $ovr_n = $len;
-		}
+	    if (@{ $_ } < $ps_n) {
+		$overlap = 1;
+		last;
 	    }
 	}
-	
+
 	# Remove prefixes and suffixes and recurse.
 
-	my $pre_s = substr $_[0], 0,  $pre_n;
-	my $suf_s = $suf_n ? substr $_[0], -$suf_n : '';
+	my $pre_s = $pre_n ?
+	            join('', @{ $_[0] }[ 0 .. $pre_n - 1 ]) : '';
+	my $suf_s = $suf_n ?
+	            join('', @{ $_[0] }[ -$suf_n .. -1 ]) : '';
+	my @presuf;
+
+	if ($overlap) {
+	    if ($prefixes and not $suffixes) {
+		$suf_s = '';
+		foreach (@_) {
+		    push @presuf,
+                         [ @{ $_ }[ $pre_n .. $#{ $_ } ] ];
+		}
+	    } elsif ($suffixes) {
+		$pre_s = '';
+		foreach (@_) {
+		    push @presuf,
+                         [ @{ $_ }[ 0 .. $#{ $_ } - $suf_n ] ];
+		}
+	    }
+	} else {
+	    foreach (@_) {
+		push @presuf,
+                     [ @{ $_ }[ $pre_n .. $#{ $_ } - $suf_n ] ];
+	    }
+	}
 
 	if ($DEBUG) {
 	    print "_presuf:$INDENT pre_s = $pre_s\n";
 	    print "_presuf:$INDENT suf_s = $suf_s\n";
+	    print "_presuf:$INDENT presuf = ",
+	          join(" ", map { join('', @$_) } @presuf), "\n";
 	}
-
-	my @presuf;
-
-	if (defined $ovr_n) {
-	    if ($suffixes) {
-		$pre_s = "";
-		foreach (@_) {
-		    my $len = length;
-		    push @presuf,
-		         $len > $ovr_n ? substr $_, 0, $len - $suf_n : "";
-		}
-	    } else {
-		foreach (@_) {
-		    push @presuf, substr $_, $pre_n;
-		}
-		$suf_s = "";
-	    }
-	} else {
-	    foreach (@_) {
-		push @presuf, substr $_, $pre_n, length($_) - $ps_n;
-	    }
-	}
-
-	print "_presuf:$INDENT presuf = ",join(":",@presuf),"\n"
-	    if $DEBUG;
 
 	my $presuf = $pre_s . _presuf($level + 1, $param, @presuf) . $suf_s;
 
@@ -314,7 +281,7 @@ sub _presuf {
 	my (@alt_n, @alt_1);
 
 	foreach (@_) {
-	    my $len = length;
+	    my $len = @{$_};
 	    if    ($len >  1) { push @len_n, $_ }
 	    elsif ($len == 1) { push @len_1, $_ }
 	    else              { $len_0++        } # $len == 0
@@ -324,7 +291,7 @@ sub _presuf {
 
 	if (@len_n) {	# Alternation.
 	    if (@len_n == 1) {
-		@alt_n = @len_n;
+		@alt_n = join('', @{ $len_n[0] });
 	    } else {
 		my @pre_d = keys %pre_d;
 		my @suf_d = keys %suf_d;
@@ -349,11 +316,11 @@ sub _presuf {
 
 		if ($prefixes) {
 		    foreach (@len_n) {
-			push @{ $len_m{ substr($_, 0, 1) } }, $_;
+			push @{ $len_m{ $_->[  0 ] } }, $_;
 		    }
 		} elsif ($suffixes) {
 		    foreach (@len_n) {
-			push @{ $len_m{ substr($_, -1  ) } }, $_;
+			push @{ $len_m{ $_->[ -1 ] } }, $_;
 		    }
 		}
 
@@ -362,22 +329,24 @@ sub _presuf {
 			push @alt_n,
                              _presuf($level + 1, $param, @{ $len_m{ $_ } });
 		    } else {
-			push @alt_n, $len_m{ $_ }->[0];
+			push @alt_n, join('', @{ $len_m{ $_ }->[0] });
 		    }
 		}
 	    }
 	}
 
 	if (@len_1) { # Character classes.
-	    if (exists $param->{ anychar } and
+	    if ($param->{ anychar } and
 		(exists $pre_d{ '.' } or exists $suf_d{ '.' }) and
-	        grep { $_ eq '.' } @len_1) {
+	        grep { $_->[0] eq '.' } @len_1) {
 		push @alt_1, '.';
 	    } else {
 		if (@len_1 == 1) {
-		    push @alt_1, $len_1[0];
+		    push @alt_1,
+                         join('', @{$len_1[0]});
 		} else {
-		    push @alt_1, join('', '[', @len_1, ']' );
+		    push @alt_1,
+                         join('', '[', (map { join('', @$_) } @len_1), ']' );
 		}
 	    }
 	}
@@ -397,7 +366,16 @@ sub _presuf {
 sub presuf {
     my $param = ref $_[0] eq 'HASH' ? shift : { };
 
-    return _presuf(0, $param, @_);
+    my @args = map { quotemeta() } @_;
+
+    # Undo quotemeta for anychars.
+    @args = map { s/\\\././g; $_ } @args if $param->{ anychar };
+
+    foreach (@args) {
+	$_ = [ /(\\?.)/g ];
+    }
+
+    return _presuf(0, $param, @args);
 }
 
 1;

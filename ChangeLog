@@ -1,3 +1,44 @@
+Fri May 12 23:16:07 2000  Jarkko Hietaniemi  <jhi@alpha.hut.fi>
+
+	* Handle metacharacters: now you can use the regular
+	  expression metacharacters in your words withour fear
+	  of the resulting regex being illegal (famous last words?)
+          Note that this also also means that if you have been using
+	  metacharacters in your words, they will now be backslash-protected.
+	
+	* Run a big test (and time-consuming, up to several minutes)
+	  in case we can find a dictionary file (like /usr/dict/words).
+	  Show also timings compared with the naïve way.  They look sweet:
+
+	# Hang on, collecting words for the next test...
+	# Got 25486 words.
+	# NOTE THAT THIS TEST WILL TAKE SEVERAL MINUTES.
+	# WE WILL TEST ALL THE LETTERS FROM a TO z.
+	# Testing 1408 words beginning with 'a'...
+	# Naïve/create:    0 wallclock secs ( 0.00 usr +  0.00 sys =  0.00 CPU)
+	# Naïve/execute:  15 wallclock secs (14.52 usr +  0.02 sys = 14.53 CPU)
+	# PreSuf/create:   1 wallclock secs ( 1.72 usr +  0.03 sys =  1.75 CPU)
+	# PreSuf/execute:  3 wallclock secs ( 2.08 usr +  0.02 sys =  2.10 CPU)
+	# Testing 1277 words beginning with 'b'...
+	# Naïve/create:    0 wallclock secs ( 0.02 usr +  0.00 sys =  0.02 CPU)
+	# Naïve/execute:  13 wallclock secs (13.08 usr +  0.03 sys = 13.12 CPU)
+	# PreSuf/create:   2 wallclock secs ( 1.45 usr +  0.00 sys =  1.45 CPU)
+	# PreSuf/execute:  1 wallclock secs ( 1.37 usr +  0.00 sys =  1.37 CPU)
+	# Testing 2144 words beginning with 'c'...
+	# Naïve/create:    0 wallclock secs ( 0.00 usr +  0.00 sys =  0.00 CPU)
+	# Naïve/execute:  23 wallclock secs (22.40 usr +  0.05 sys = 22.45 CPU)
+	# PreSuf/create:   3 wallclock secs ( 2.90 usr +  0.02 sys =  2.92 CPU)
+	# PreSuf/execute:  3 wallclock secs ( 2.90 usr +  0.00 sys =  2.90 CPU)
+	# Testing 1145 words beginning with 'd'...
+
+	  The naïve way is just to concatenate the words with "|"
+	  (that's the Naïve/create).  PreSuf/create is the presuf() call.
+	  The */execute are the running times of the respective
+	  regular expressions.		
+	
+	* Release as 1.10.  The jump in the version number is
+	  warranted by the fixed handling of metacharacters.
+	
 Thu May 11 23:15:16 2000  Jarkko Hietaniemi  <jhi@alpha.hut.fi>
 
 	* PreSuf.pm: make the debug prints only to show up
