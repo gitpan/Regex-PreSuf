@@ -2,9 +2,11 @@ package Regex::PreSuf;
 
 use strict;
 local $^W = 1;
-use vars qw($VERSION);
+use vars qw($VERSION $DEBUG);
 
-$VERSION = "1.02";
+$VERSION = "1.03";
+
+$DEBUG = 0;  
 
 =pod
 
@@ -26,7 +28,7 @@ The B<presuf()> subroutine builds regular expressions out of 'word
 lists', lists of strings.  The regular expression matches the same
 words as the word list.  These regular expressions normally run few
 dozen percentages faster than a simple-minded '|'-concatenation of the
-word.
+words.
 
 Examples:
 
@@ -91,7 +93,8 @@ To use B<only> suffixes use
 
 Two auxiliary subroutines are optionally exportable.  B<WARNING>:
 strictly speaking these routines are mainly only intended for internal
-use of the module and their interface is subject to change.
+use of the module and their interface and existence is subject to
+change withour warning.
 
 =over 4
 
@@ -117,6 +120,15 @@ C<(3, 'o', ..., 'r', ...)> will be returned.
 
 =back
 
+=head2 Debugging
+
+In case you want to flood your session without debug messages
+you can turn on debugging by saying
+
+	Regex::PreSuf::debug(1);
+
+How to turn them off again is left as an exercise for the kind reader.
+
 =head1 COPYRIGHT
 
 Jarkko Hietaniemi
@@ -130,6 +142,14 @@ require Exporter;
 @ISA       = qw(Exporter);
 @EXPORT    = qw(presuf);
 @EXPORT_OK = qw(prefix_length suffix_length);
+
+sub debug {
+    if (@_) {
+	$DEBUG = shift;
+    } else {
+	return $DEBUG;
+    }
+}
 
 sub prefix_length {
     my $n = 0;
@@ -172,15 +192,24 @@ sub suffix_length {
 }
 
 sub _presuf {
+    my $level = shift;
+    my $INDENT = " " x $level if $DEBUG;
     my $param = shift;
     
-    return $_[0] if @_ == 1;
+    print "_presuf:$INDENT <- @_\n" if $DEBUG;
+
+    if (@_ == 1) {
+	print "_presuf:$INDENT -> $_[0]\n" if $DEBUG;
+	return $_[0];
+    }
 
     my ($pre_n, %pre_d) = prefix_length @_;
     my ($suf_n, %suf_d) = suffix_length @_;
 
-    print "_presuf: pre_n = $pre_n (",join(" ",%pre_d),")\n";
-    print "_presuf: suf_n = $suf_n (",join(" ",%suf_d),")\n";
+    if ($DEBUG) {
+	print "_presuf:$INDENT pre_n = $pre_n (",join(" ",%pre_d),")\n";
+	print "_presuf:$INDENT suf_n = $suf_n (",join(" ",%suf_d),")\n";
+    }
 
     my $prefixes =  not exists $param->{ prefixes } ||
 	                       $param->{ prefixes };
@@ -188,10 +217,28 @@ sub _presuf {
 	           (    exists $param->{ prefixes } &&
                     not        $param->{ prefixes });
 
-    if ($pre_n or $suf_n) {
-	my $ps_n = $pre_n + $suf_n;
-	my $ovr_n;
+    if ($prefixes and not $suffixes) {
+	# On qw(rattle rattlesnake) clear suffix.
+	foreach (keys %pre_d) {
+	    if ($_ eq "") {
+		$suf_n = 0;
+		%suf_d = ();
+		last;
+	    }
+	}
+    }
 
+    if ($suffixes and not $prefixes) {
+	foreach (keys %suf_d) {
+	    if ($_ eq "") {
+		$pre_n = 0;
+		%pre_d = ();
+		last;
+	    }
+	}
+    }
+
+    if ($pre_n or $suf_n) {
 	if ($pre_n == $suf_n) {
 	    my $eq_n = 1;
 
@@ -200,28 +247,35 @@ sub _presuf {
 		$eq_n++;
 	    }
 
+	    print "_presuf:$INDENT -> $_[0]\n" if $DEBUG;
+
 	    return $_[0] if $eq_n == @_; # All equal.  How boring.
+	}
 
-	    foreach (@_) {
-		my $len = length;
+	my $ps_n = $pre_n + $suf_n;
+	my $ovr_n; # Guard against prefix and suffix overlapping.
 
-		if ($len < $ps_n) {
-		    if (defined $ovr_n){
-			$ovr_n = $len if $len < $ovr_n;
-		    } else {
-			$ovr_n = $len;
-		    }
+	foreach (@_) {
+	    my $len = length;
+	    
+	    if ($len < $ps_n) {
+		if (defined $ovr_n) {
+		    $ovr_n = $len if $len < $ovr_n;
+		} else {
+		    $ovr_n = $len;
 		}
 	    }
 	}
-
+	
 	# Remove prefixes and suffixes and recurse.
 
 	my $pre_s = substr $_[0], 0,  $pre_n;
 	my $suf_s = $suf_n ? substr $_[0], -$suf_n : '';
 
-	print "_presuf: pre_s = $pre_s\n";
-	print "_presuf: suf_s = $suf_s\n";
+	if ($DEBUG) {
+	    print "_presuf:$INDENT pre_s = $pre_s\n";
+	    print "_presuf:$INDENT suf_s = $suf_s\n";
+	}
 
 	my @presuf;
 
@@ -245,9 +299,14 @@ sub _presuf {
 	    }
 	}
 
-	print "_presuf: presuf = ",join(":",@presuf),"\n";
+	print "_presuf:$INDENT presuf = ",join(":",@presuf),"\n"
+	    if $DEBUG;
 
-	return $pre_s . _presuf($param, @presuf) . $suf_s;
+	my $presuf = $pre_s . _presuf($level + 1, $param, @presuf) . $suf_s;
+
+	print "_presuf:$INDENT -> $presuf\n" if $DEBUG;
+
+	return $presuf;
     } else {
 	my @len_n;
 	my @len_1;
@@ -301,7 +360,7 @@ sub _presuf {
 		foreach (sort keys %len_m) {
 		    if (@{ $len_m{ $_ } } > 1) {
 			push @alt_n,
-                             _presuf($param, @{ $len_m{ $_ } });
+                             _presuf($level + 1, $param, @{ $len_m{ $_ } });
 		    } else {
 			push @alt_n, $len_m{ $_ }->[0];
 		    }
@@ -329,6 +388,8 @@ sub _presuf {
 
 	$alt .= '?' if $len_0;
 
+	print "_presuf:$INDENT -> $alt\n" if $DEBUG;
+
 	return $alt;
     }
 }
@@ -336,7 +397,7 @@ sub _presuf {
 sub presuf {
     my $param = ref $_[0] eq 'HASH' ? shift : { };
 
-    _presuf($param, @_);
+    return _presuf(0, $param, @_);
 }
 
 1;

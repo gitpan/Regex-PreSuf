@@ -1,3 +1,15 @@
+Thu May 11 23:15:16 2000  Jarkko Hietaniemi  <jhi@alpha.hut.fi>
+
+	* PreSuf.pm: make the debug prints only to show up
+	  when debugging requested (aaargh, I've developed
+	  a bad habit of doing this lately, leaving debugging
+	  on for the released versions), spotted by Mike Giroux.
+
+	* Fix two bugs spotted by Mike Giroux: qw(rattle rattlesnake)
+	  and qw(rata ratepayer rater) didn't produced correct results.
+
+	* Release as 1.03.  
+
 Sat May  6 01:17:24 2000  Jarkko Hietaniemi  <jhi@iki.fi>
 
 	* Fix a bug where qw(aba a) was presufixed as 'ab?a',
