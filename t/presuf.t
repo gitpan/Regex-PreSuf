@@ -1,6 +1,6 @@
 use Regex::PreSuf;
 
-print "1..9\n";
+print "1..10\n";
 
 my $test = 1;
 
@@ -16,6 +16,7 @@ sub Tpresuf {
     print "#(expected: $want) (got: $got)\n" unless $ok;
 }
 
+Tpresuf([qw(foobar)], 'foobar');
 Tpresuf([qw(foopar fooqar)], 'foo[pq]ar');
 Tpresuf([qw(foopar fooar)], 'foop?ar');
 Tpresuf([qw(foopar fooqar fooar)], 'foo[pq]?ar');

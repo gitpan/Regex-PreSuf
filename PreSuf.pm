@@ -2,6 +2,9 @@ package Regex::PreSuf;
 
 use strict;
 local $^W = 1;
+use vars qw($VERSION);
+
+$VERSION = 0.002;
 
 =pod
 
@@ -9,13 +12,15 @@ local $^W = 1;
 
 Regex::PreSuf - create regular expressions from word lists
 
-=head1 DESCRIPTION
+=head1 SYNOPSIS
 
 	use Regex::PreSuf;
 	
 	my $re = presuf(qw(foobar fooxar foozap));
 
 	# $re should be now 'foo(?:zap|[bx]ar)'
+
+=head1 DESCRIPTION
 
 This module creates regular expressions out of 'word lists', lists
 of strings, matching the same words.  The easiest thing to do would
@@ -119,6 +124,8 @@ sub _presuf {
     my ($suf_n, %suf_d) = suffix_length @_;
 
     if ($pre_n or $suf_n) {
+	return $_[0] if $pre_n == $suf_n; # Really?  All equal?
+
 	# Remove prefixes and suffixes and recurse.
 
 	my $pre_s = substr $_[0], 0,  $pre_n;
@@ -146,7 +153,7 @@ sub _presuf {
 	    else              { $len_0 = 1      } # $len == 0
 	}
 
-	# NOTE: does not preserve order.
+	# NOTE: does not preserve the order of |.
 
 	if (@len_n) {	# Alternation.
 	    if (@len_n == 1) {
