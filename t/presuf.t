@@ -1,6 +1,6 @@
 use Regex::PreSuf;
 
-print "1..15\n";
+print "1..22\n";
 
 my $test = 1;
 
@@ -42,4 +42,12 @@ Tpresuf([
 Tpresuf([{anychar=>1},
         qw(.perl p.erl pe.rl per.l perl. pel .erl erl per. per p.rl prl pe.l)],
         '(?:.p?erl|erl|p(?:.e?rl|e(?:.r?l|r(?:.l|l.|.)|[lr])|rl))');
+Tpresuf([qw(aba a)], 'a(?:ba)?');
+Tpresuf([{suffixes=>1},qw(aba a)], '(?:ab)?a');
+Tpresuf([qw(ababa aba)], 'aba(?:ba)?');
+Tpresuf([qw(aabaa a)], 'a(?:abaa)?');
+Tpresuf([qw(aabaa aa)], 'aa(?:baa)?');
+Tpresuf([qw(aabaa aaa)], 'aa(?:ba)?a');
+Tpresuf([qw(aabaa aaaa)], 'aab?aa');
+
 

@@ -4,7 +4,7 @@ use strict;
 local $^W = 1;
 use vars qw($VERSION);
 
-$VERSION = 1.01;
+$VERSION = "1.02";
 
 =pod
 
@@ -89,9 +89,9 @@ To use B<only> suffixes use
 
 =head2 Prefix and Suffix Length
 
-Two auxiliary subroutines are optionally exportable.  B<WARNING>
-Strictly speaking these routines are mainly intended for internal use
-of the module and their interface is subject to change.
+Two auxiliary subroutines are optionally exportable.  B<WARNING>:
+strictly speaking these routines are mainly only intended for internal
+use of the module and their interface is subject to change.
 
 =over 4
 
@@ -179,7 +179,19 @@ sub _presuf {
     my ($pre_n, %pre_d) = prefix_length @_;
     my ($suf_n, %suf_d) = suffix_length @_;
 
+    print "_presuf: pre_n = $pre_n (",join(" ",%pre_d),")\n";
+    print "_presuf: suf_n = $suf_n (",join(" ",%suf_d),")\n";
+
+    my $prefixes =  not exists $param->{ prefixes } ||
+	                       $param->{ prefixes };
+    my $suffixes =             $param->{ suffixes } ||
+	           (    exists $param->{ prefixes } &&
+                    not        $param->{ prefixes });
+
     if ($pre_n or $suf_n) {
+	my $ps_n = $pre_n + $suf_n;
+	my $ovr_n;
+
 	if ($pre_n == $suf_n) {
 	    my $eq_n = 1;
 
@@ -189,6 +201,18 @@ sub _presuf {
 	    }
 
 	    return $_[0] if $eq_n == @_; # All equal.  How boring.
+
+	    foreach (@_) {
+		my $len = length;
+
+		if ($len < $ps_n) {
+		    if (defined $ovr_n){
+			$ovr_n = $len if $len < $ovr_n;
+		    } else {
+			$ovr_n = $len;
+		    }
+		}
+	    }
 	}
 
 	# Remove prefixes and suffixes and recurse.
@@ -196,13 +220,32 @@ sub _presuf {
 	my $pre_s = substr $_[0], 0,  $pre_n;
 	my $suf_s = $suf_n ? substr $_[0], -$suf_n : '';
 
+	print "_presuf: pre_s = $pre_s\n";
+	print "_presuf: suf_s = $suf_s\n";
+
 	my @presuf;
 
-	my $ps_n = $pre_n + $suf_n;
-
-	foreach (@_) {
-	    push @presuf, substr $_, $pre_n, length($_) - $ps_n;
+	if (defined $ovr_n) {
+	    if ($suffixes) {
+		$pre_s = "";
+		foreach (@_) {
+		    my $len = length;
+		    push @presuf,
+		         $len > $ovr_n ? substr $_, 0, $len - $suf_n : "";
+		}
+	    } else {
+		foreach (@_) {
+		    push @presuf, substr $_, $pre_n;
+		}
+		$suf_s = "";
+	    }
+	} else {
+	    foreach (@_) {
+		push @presuf, substr $_, $pre_n, length($_) - $ps_n;
+	    }
 	}
+
+	print "_presuf: presuf = ",join(":",@presuf),"\n";
 
 	return $pre_s . _presuf($param, @presuf) . $suf_s;
     } else {
@@ -228,12 +271,6 @@ sub _presuf {
 		my @suf_d = keys %suf_d;
 
 		my (%len_m, @len_m);
-
-		my $prefixes = not exists $param->{ prefixes } ||
-		                          $param->{ prefixes };
-		my $suffixes =            $param->{ suffixes } ||
-                              (    exists $param->{ prefixes } &&
-                               not        $param->{ prefixes });
 
 		if ($prefixes and $suffixes) {
 		    if (@pre_d < @suf_d) {

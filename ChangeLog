@@ -1,3 +1,12 @@
+Sat May  6 01:17:24 2000  Jarkko Hietaniemi  <jhi@iki.fi>
+
+	* Fix a bug where qw(aba a) was presufixed as 'ab?a',
+	  which incorrectly matches qw(aba aa).
+	  Now correctly produces 'a(?:ba)?'.  Bug spotted by
+	  Mark Kvale. 
+
+	* Release as 1.02.
+
 Wed Apr 12 19:33:37 2000  Jarkko Hietaniemi  <jhi@iki.fi>
 
 	* Release as 1.01. 
