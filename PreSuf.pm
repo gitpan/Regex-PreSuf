@@ -4,7 +4,7 @@ use strict;
 local $^W = 1;
 use vars qw($VERSION);
 
-$VERSION = 0.005;
+$VERSION = 1.01;
 
 =pod
 
@@ -89,7 +89,9 @@ To use B<only> suffixes use
 
 =head2 Prefix and Suffix Length
 
-Two auxiliary subroutines are optionally exportable:
+Two auxiliary subroutines are optionally exportable.  B<WARNING>
+Strictly speaking these routines are mainly intended for internal use
+of the module and their interface is subject to change.
 
 =over 4
 
@@ -106,8 +108,6 @@ C<(2, 'b', ..., 'x', ...)> will be returned.
 =item *
 
 	($suffix_length, %diff_chars) = suffix_length(@word_list);
-
-B<suffix_length()>
 
 B<suffix_length()> gets a word list and returns the length of the
 suffix shared by all the words (such a suffix may not exist, making

@@ -1,4 +1,8 @@
-Wed Apr 12 05:49:52 2000  Jarkko Hietaniemi  <jhi@alpha.hut.fi>
+Wed Apr 12 19:33:37 2000  Jarkko Hietaniemi  <jhi@iki.fi>
+
+	* Release as 1.01. 
+
+Wed Apr 12 05:49:52 2000  Jarkko Hietaniemi  <jhi@iki.fi>
 
 	* Tell about prefix_length() and suffix_length().
 	
