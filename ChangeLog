@@ -1,4 +1,10 @@
-Tue May 16 05:25:01 2000  Jarkko Hietaniemi  <jhi@alpha.hut.fi>
+Tue May 16 05:25:01 2000  Jarkko Hietaniemi  <jhi@iki.fi>
+
+	* Sigh.  The t/presuf.t would also fail if no words 
+	  file could be found because of faulty test logic.
+	  Reported by Paul Schinder.
+
+	* Release as 1.15.
 
 	* The ppclinux /usr/dict/words still tripped the test suite.
 	  (No actual bug in the presuf() code)  Reported by Paul Schinder.

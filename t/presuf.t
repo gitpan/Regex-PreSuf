@@ -67,7 +67,7 @@ print STDERR "# Hang on, collecting words for the next test...\n";
 
 my %words;
 
-foreach my $dict (qw(../ppclinuxwords /usr/dict/words /usr/share/dict/words)) {
+foreach my $dict (qw(/usr/dict/words /usr/share/dict/words)) {
     if (open(WORDS, $dict)) {
 	while (<WORDS>) {
 	    chomp;
@@ -214,6 +214,5 @@ if (@words) {
     print "not " unless $ok == 2 * @az;
     print "ok ", $test++, "\n";
 } else {
-    print "ok ", $test++, "# skipped: no words found\n";
     print "ok ", $test++, "# skipped: no words found\n";
 }
