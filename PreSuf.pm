@@ -4,7 +4,7 @@ use strict;
 local $^W = 1;
 use vars qw($VERSION);
 
-$VERSION = 0.004;
+$VERSION = 0.005;
 
 =pod
 
@@ -22,31 +22,52 @@ Regex::PreSuf - create regular expressions from word lists
 
 =head1 DESCRIPTION
 
-This module creates regular expressions out of 'word lists', lists of
-strings, matching the same words.  These optimized regular expressions
-normally run few dozen percentages faster than the simple-minded
-'|'-concatenation.  The easiest thing to do would be of course just to
-concatenate the words with '|' but this module tries to be cleverer.
+The B<presuf()> subroutine builds regular expressions out of 'word
+lists', lists of strings.  The regular expression matches the same
+words as the word list.  These regular expressions normally run few
+dozen percentages faster than a simple-minded '|'-concatenation of the
+word.
+
+Examples:
+
+=over 4
+
+=item *
+
+	'foobar fooxar' => 'foo[bx]ar'
+
+=item *
+
+	'foobar foozap' => 'foo(?:bar|zap)'
+
+=item *
+
+	'foobar fooar'  => 'foob?ar'
+
+=back
 
 The downsides:
 
 =over 4
 
-=item the original order of the words is not necessarily respected,
-for example because the character class matches are collected
-together, separate from the '|' alternations. You can think of, say,
-'[ab]' as 'a|b', to see why this matters.
+=item *
 
-=item because the module blithely ignores any specialness of any
+The original order of the words is not necessarily respected,
+for example because the character class matches are collected
+together, separate from the '|' alternations.
+
+=item *
+
+Because the module blithely ignores any specialness of any
 regular expression metacharacters such as the C<*?+{}[]>, please
 B<do not use> them in the words, the resulting regular expression
-will most likely be illegal
+will most likely be highly illegal.
 
 =back
 
 For the second downside there is an exception.  The module has some
-rudimentary grasp of what to do with the 'any character'
-metacharacter.  If you call C<presuf()> like this:
+rudimentary grasp of how to use the 'any character' metacharacter.
+If you call B<presuf()> like this:
 
 	my $re = presuf({ anychar=>1 }, qw(foobar foo.ar fooxar));
 
@@ -54,9 +75,9 @@ metacharacter.  If you call C<presuf()> like this:
 
 The module finds out the common prefixes and suffixes of the words and
 then recursively looks at the remaining differences.  However, by
-default it only uses prefixes because for many languages (natural or
-artificial) this seems to produce the fastest matchers.  To allow
-also for suffixes use
+default only common prefixes are used because for many languages
+(natural or artificial) this seems to produce the fastest matchers.
+To allow also for suffixes use
 
 	my $re = presuf({ suffixes=>1 }, ...);
 
@@ -66,9 +87,39 @@ To use B<only> suffixes use
 
 (this implicitly enables suffixes)
 
+=head2 Prefix and Suffix Length
+
+Two auxiliary subroutines are optionally exportable:
+
+=over 4
+
+=item *
+
+	($prefix_length, %diff_chars) = prefix_length(@word_list);
+
+B<prefix_length()> gets a word list and returns the length of the
+prefix shared by all the words (such a prefix may not exist, making
+the length to be zero), and a hash that has as keys the characters
+that made the prefix to "stop".  For example for C<qw(foobar fooxar)>
+C<(2, 'b', ..., 'x', ...)> will be returned.
+
+=item *
+
+	($suffix_length, %diff_chars) = suffix_length(@word_list);
+
+B<suffix_length()>
+
+B<suffix_length()> gets a word list and returns the length of the
+suffix shared by all the words (such a suffix may not exist, making
+the length to be zero), and a hash that has as keys the characters
+that made the suffix to "stop".  For example for C<qw(foobar barbar)>
+C<(3, 'o', ..., 'r', ...)> will be returned.
+
+=back
+
 =head1 COPYRIGHT
 
-Jarkko Hietaniemi F<E<lt>jhi@iki.fiE<gt>>
+Jarkko Hietaniemi
 
 This code is distributed under the same copyright terms as Perl itself.
 

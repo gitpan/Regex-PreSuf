@@ -1,0 +1,13 @@
+Wed Apr 12 05:49:52 2000  Jarkko Hietaniemi  <jhi@alpha.hut.fi>
+
+	* Tell about prefix_length() and suffix_length().
+	
+	* Fixed tiny documentation nits.
+
+	* Bump version number to 0.005.
+	
+	
+	
+	
+	
+
