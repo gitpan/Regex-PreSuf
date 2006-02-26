@@ -1,4 +1,5 @@
 use Regex::PreSuf;
+chdir 't' or die "$0: chdir: $!\n";
 
 print "1..1\n";
 
@@ -8,21 +9,23 @@ print STDERR "# Hang on, collecting words for the next test...\n";
 
 my %words;
 
-foreach my $dict (qw(/usr/dict/words /usr/share/dict/words)) {
-    if (open(WORDS, $dict)) {
-	while (<WORDS>) {
-	    chomp;
-	    $words{$_}++;
-	}
-	close(WORDS);
+if (open(WORDS, "words.txt")) {
+    while (<WORDS>) {
+	chomp;
+	$words{$_}++;
     }
+    close(WORDS);
+} else {
+    die "$0: wordst.txt: $!\n";
 }
 
 my @words = keys %words;
 
-use Benchmark;
+# @words = grep { rand() < 0.10 } @words;
 
-my $MAXWORDS = 20000;
+printf STDERR "# Found %d words.\n", scalar @words;
+
+use Benchmark;
 
 if (@words) {
     print STDERR "# NOTE THAT THIS TEST WILL TAKE SEVERAL MINUTES.\n";
@@ -31,15 +34,6 @@ if (@words) {
     print STDERR "# both as the first and the last letters.\n";
     my $ok = 0;
     my @az = ("a".."z");
-
-    # Throw away some of the words.
-    @words = grep { /^[a-z]+$/ } @words;
-
-    while (@words > $MAXWORDS) {
-	splice @words, rand(@words), rand(100);
-    }
-
-    print STDERR "# Using ", scalar @words, " words.\n";
 
     my $N0 = 2 * @words;
     my $N1;	
@@ -66,8 +60,8 @@ if (@words) {
 	$t1 = new Benchmark;
 	my $tb = timediff($t1, $t0);
         $naiveCreationTotal=Benchmark::timesum($tb,$naiveCreationTotal);
-	print STDERR "# Naïve/create:   ", timestr($tb), "\n";
-	print STDERR "# Naïve/execute:  ";
+	print STDERR "# Naive/create:   ", timestr($tb), "\n";
+	print STDERR "# Naive/execute:  ";
 	$t0 = new Benchmark;
 	my @b = grep { /^(?:$b)$/ } @words;
 	$t1 = new Benchmark;
@@ -89,8 +83,8 @@ if (@words) {
         print STDERR timestr($tc), "\n";
 
 	print STDERR "# Aggregate times so far:\n";
-	print STDERR "# Naïve/create:   ",timestr($naiveCreationTotal),"\n";
-	print STDERR "# Naïve/execute:  ",timestr($naiveExecutionTotal),"\n";
+	print STDERR "# Naive/create:   ",timestr($naiveCreationTotal),"\n";
+	print STDERR "# Naive/execute:  ",timestr($naiveExecutionTotal),"\n";
 	print STDERR "# Presuf/create:  ",timestr($presufCreationTotal),"\n";
 	print STDERR "# PreSuf/execute: ",timestr($presufExecutionTotal),"\n";
     }
@@ -152,11 +146,23 @@ if (@words) {
 	estimateit();
     }
 
+    print STDERR "#\n";
     print STDERR "# Aggregate times total:\n";
-    print STDERR "# Naïve/create:   ",timestr($naiveCreationTotal),"\n";
-    print STDERR "# Naïve/execute:  ",timestr($naiveExecutionTotal),"\n";
-    print STDERR "# Presuf/create:  ",timestr($presufCreationTotal),"\n";
+    print STDERR "#\n";
+    print STDERR "# Naive/create:   ",timestr($naiveCreationTotal),"\n";
+    print STDERR "# Naive/execute:  ",timestr($naiveExecutionTotal),"\n";
+    print STDERR "# PreSuf/create:  ",timestr($presufCreationTotal),"\n";
     print STDERR "# PreSuf/execute: ",timestr($presufExecutionTotal),"\n";
+
+    my $naiveTotal  = Benchmark::timesum($naiveCreationTotal,$naiveExecutionTotal);
+    my $presufTotal = Benchmark::timesum($presufCreationTotal,$presufExecutionTotal);
+    print STDERR "#\n";
+    print STDERR "# Naive/total:    ",timestr($naiveTotal),"\n";
+    print STDERR "# PreSuf/total:   ",timestr($presufTotal),"\n";
+    print STDERR "#\n";
+    printf STDERR "# PreSuf speedup = %.2f (more than one is better)\n",
+	$naiveTotal->cpu_a / $presufTotal->cpu_a;
+    print STDERR "#\n";
 
     print "not " unless $ok == 2 * @az;
     print "ok ", $test++, "\n";

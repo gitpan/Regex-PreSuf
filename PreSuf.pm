@@ -4,9 +4,9 @@ use strict;
 local $^W = 1;
 use vars qw($VERSION $DEBUG);
 
-$VERSION = "1.16";
+$VERSION = "1.17";
 
-$DEBUG = 0;  
+$DEBUG = 0;
 
 =pod
 
@@ -346,8 +346,11 @@ sub _presuf {
 		    push @alt_1,
                          join('', @{$len_1[0]});
 		} else {
+		    my %uniq;
 		    push @alt_1,
-                         join('', '[', (map { join('', @$_) } @len_1), ']' );
+                         join('', '[', (sort
+					grep { ! $uniq{$_}++ }
+					map { join('', @$_) } @len_1), ']' );
 		}
 	    }
 	}

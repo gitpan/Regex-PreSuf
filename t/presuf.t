@@ -1,6 +1,6 @@
 use Regex::PreSuf;
 
-print "1..31\n";
+print "1..32\n";
 
 my $test = 1;
 
@@ -76,3 +76,5 @@ Tpresuf(["foo\+bar"], "foo\\+bar");
 Tpresuf(["foo\?bar"], "foo\\?bar");
 Tpresuf(["foo\\bar"], "foo\\\\bar");
 
+# From Sebastian Nagel.
+Tpresuf([qw(blo bla bla blo blub)], "bl(?:ub|[ao])");
